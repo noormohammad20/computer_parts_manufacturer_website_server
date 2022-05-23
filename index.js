@@ -18,6 +18,7 @@ async function run() {
     try {
         await client.connect()
         const productCollection = client.db('computer_parts_manufacturer').collection('products')
+        const orderCollection = client.db('computer_parts_manufacturer').collection('orders')
 
         app.get('/product', async (req, res) => {
             const query = {}
@@ -30,6 +31,12 @@ async function run() {
             const query = { _id: ObjectId(id) }
             const service = await productCollection.findOne(query)
             res.send(service)
+        })
+
+        app.post('/order', async (req, res) => {
+            const order = req.body
+            const result = await orderCollection.insertOne(order)
+            res.send(result)
         })
     }
     finally {
