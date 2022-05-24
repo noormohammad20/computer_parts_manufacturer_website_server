@@ -36,6 +36,19 @@ async function run() {
         const orderCollection = client.db('computer_parts_manufacturer').collection('orders')
         const userCollection = client.db('computer_parts_manufacturer').collection('users')
 
+        const verifyAdmin = async (req, res, next) => {
+            const email = req.params.email
+            const requestEmail = req.decoded.email
+            const requestAccount = await userCollection.findOne({ email: requestEmail })
+            if (requestAccount.role === 'admin') {
+
+                next()
+            }
+            else {
+                res.status(403).send({ message: 'forbidden' })
+            }
+        }
+
         app.get('/product', async (req, res) => {
             const query = {}
             const cursor = productCollection.find(query)
@@ -49,7 +62,7 @@ async function run() {
             res.send(service)
         })
 
-        app.post('/product', async (req, res) => {
+        app.post('/product', verifyJWT, async (req, res) => {
             const product = req.body
             const result = await productCollection.insertOne(product)
             res.send(result)
@@ -62,7 +75,7 @@ async function run() {
             res.send(result)
         })
 
-        app.post('/order', async (req, res) => {
+        app.post('/order', verifyAdmin, async (req, res) => {
             const order = req.body
             const result = await orderCollection.insertOne(order)
             res.send(result)
@@ -80,21 +93,17 @@ async function run() {
             res.send(users)
         })
 
-        app.put('/user/admin/:email', verifyJWT, async (req, res) => {
+        app.put('/user/admin/:email', verifyJWT, verifyAdmin, async (req, res) => {
             const email = req.params.email
-            const requestEmail = req.decoded.email
-            const requestAccount = await userCollection.findOne({ email: requestEmail })
-            if (requestAccount.role === 'admin') {
-                const filter = { email: email }
-                const updateDoc = {
-                    $set: { role: 'admin' }
-                }
-                const result = await userCollection.updateOne(filter, updateDoc)
-                res.send(result)
+
+
+            const filter = { email: email }
+            const updateDoc = {
+                $set: { role: 'admin' }
             }
-            else {
-                res.status(403).send({ message: 'forbidden' })
-            }
+            const result = await userCollection.updateOne(filter, updateDoc)
+            res.send(result)
+
 
 
         })
