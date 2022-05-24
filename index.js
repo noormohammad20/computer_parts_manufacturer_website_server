@@ -49,6 +49,12 @@ async function run() {
             res.send(service)
         })
 
+        app.post('/product', async (req, res) => {
+            const product = req.body
+            const result = await productCollection.insertOne(product)
+            res.send(result)
+        })
+
         app.get('/order', verifyJWT, async (req, res) => {
             const email = req.query.userEmail
             const query = { email: email }
