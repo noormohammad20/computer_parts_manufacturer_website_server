@@ -55,6 +55,11 @@ async function run() {
             const services = await cursor.toArray()
             res.send(services)
         })
+        app.get('/dashboard/manageProduct', verifyJWT, verifyAdmin, async (req, res) => {
+            const products = await productCollection.find().toArray()
+            res.send(products)
+        })
+
         app.get('/product/:id', async (req, res) => {
             const id = req.params.id
             const query = { _id: ObjectId(id) }
