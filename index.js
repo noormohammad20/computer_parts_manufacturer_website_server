@@ -37,6 +37,7 @@ async function run() {
         const productCollection = client.db('computer_parts_manufacturer').collection('products')
         const orderCollection = client.db('computer_parts_manufacturer').collection('orders')
         const userCollection = client.db('computer_parts_manufacturer').collection('users')
+        const paymentCollection = client.db('computer_parts_manufacturer').collection('payments')
 
         const verifyAdmin = async (req, res, next) => {
             const requester = req.decoded.email
@@ -90,6 +91,22 @@ async function run() {
             const query = { _id: ObjectId(id) }
             const result = await productCollection.deleteOne(query)
             res.send(result)
+        })
+
+        app.patch('/order/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id
+            const payment = req.body
+            const filter = { _id: ObjectId(id) }
+            const updateDoc = {
+                $set: {
+                    paid: true,
+                    transactionId: payment.transactionId
+                }
+            }
+            const result = await paymentCollection.insertOne(payment)
+            const updateOrder = await orderCollection.updateOne(filter, updateDoc)
+            res.send(updateOrder)
+
         })
 
         app.get('/order', verifyJWT, async (req, res) => {
