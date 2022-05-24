@@ -1,9 +1,11 @@
 const express = require('express')
 const cors = require('cors')
 var jwt = require('jsonwebtoken')
-const app = express()
 require('dotenv').config()
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb')
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
+
+const app = express()
 const port = process.env.PORT || 5000
 
 app.use(cors())
@@ -37,17 +39,27 @@ async function run() {
         const userCollection = client.db('computer_parts_manufacturer').collection('users')
 
         const verifyAdmin = async (req, res, next) => {
-            const email = req.params.email
-            const requestEmail = req.decoded.email
-            const requestAccount = await userCollection.findOne({ email: requestEmail })
-            if (requestAccount.role === 'admin') {
-
+            const requester = req.decoded.email
+            const requesterAccount = await userCollection.findOne({ email: requester })
+            if (requesterAccount.role === 'admin') {
                 next()
             }
             else {
-                res.status(403).send({ message: 'forbidden' })
+                res.status(403).send({ message: 'Forbidden Access' })
             }
         }
+
+        app.post('/create-payment-intent', async (req, res) => {
+            const service = req.body
+            const price = service.price
+            const amount = price * 100
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: 'usd',
+                payment_method_types: ['card']
+            })
+            res.send({ clientSecret: paymentIntent.client_secret })
+        })
 
         app.get('/product', async (req, res) => {
             const query = {}
@@ -73,6 +85,13 @@ async function run() {
             res.send(result)
         })
 
+        app.delete('/product/:id', verifyJWT, verifyAdmin, async (req, res) => {
+            const id = req.params.id
+            const query = { _id: ObjectId(id) }
+            const result = await productCollection.deleteOne(query)
+            res.send(result)
+        })
+
         app.get('/order', verifyJWT, async (req, res) => {
             const email = req.query.userEmail
             const query = { email: email }
@@ -80,7 +99,14 @@ async function run() {
             res.send(result)
         })
 
-        app.post('/order', verifyAdmin, async (req, res) => {
+        app.get('/order/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id
+            const query = { _id: ObjectId(id) }
+            const order = await orderCollection.findOne(query)
+            res.send(order)
+        })
+
+        app.post('/order', async (req, res) => {
             const order = req.body
             const result = await orderCollection.insertOne(order)
             res.send(result)
