@@ -39,6 +39,7 @@ async function run() {
         const userCollection = client.db('computer_parts_manufacturer').collection('users')
         const paymentCollection = client.db('computer_parts_manufacturer').collection('payments')
         const reviewCollection = client.db('computer_parts_manufacturer').collection('reviews')
+        const profileCollection = client.db('computer_parts_manufacturer').collection('myProfile')
 
         const verifyAdmin = async (req, res, next) => {
             const requester = req.decoded.email
@@ -110,10 +111,9 @@ async function run() {
 
         })
 
-        app.get('/order', verifyJWT, async (req, res) => {
-            const email = req.query.userEmail
-            const query = { email: email }
-            const result = await orderCollection.find(query).toArray()
+        app.get('/order/:email', verifyJWT, async (req, res) => {
+            const email = req.params.userEmail
+            const result = await orderCollection.find({ email: email }).toArray()
             res.send(result)
         })
 
@@ -177,6 +177,12 @@ async function run() {
         app.post('/review', async (req, res) => {
             const order = req.body
             const result = await reviewCollection.insertOne(order)
+            res.send(result)
+        })
+
+        app.post('/myProfile', async (req, res) => {
+            const myProfile = req.body
+            const result = await profileCollection.insertOne(myProfile)
             res.send(result)
         })
 
