@@ -38,6 +38,7 @@ async function run() {
         const orderCollection = client.db('computer_parts_manufacturer').collection('orders')
         const userCollection = client.db('computer_parts_manufacturer').collection('users')
         const paymentCollection = client.db('computer_parts_manufacturer').collection('payments')
+        const reviewCollection = client.db('computer_parts_manufacturer').collection('reviews')
 
         const verifyAdmin = async (req, res, next) => {
             const requester = req.decoded.email
@@ -167,6 +168,18 @@ async function run() {
             const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET)
             res.send({ result, token })
         })
+
+        app.get('/review', async (req, res) => {
+            const review = await reviewCollection.find().toArray()
+            res.send(review)
+        })
+
+        app.post('/review', async (req, res) => {
+            const order = req.body
+            const result = await reviewCollection.insertOne(order)
+            res.send(result)
+        })
+
     }
     finally {
 
