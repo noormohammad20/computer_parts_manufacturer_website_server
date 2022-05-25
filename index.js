@@ -111,15 +111,16 @@ async function run() {
 
         })
 
-        app.get('/myOrder/:email', async (req, res) => {
+        app.get('/myOrder/:email', verifyJWT, async (req, res) => {
             const email = req.params.email
             const result = await orderCollection.find({ email: email }).toArray()
             res.send(result)
         })
-        app.delete('/myOrder/:email', verifyJWT, verifyAdmin, async (req, res) => {
+
+        app.delete('/order/:email', verifyJWT, async (req, res) => {
             const email = req.params.email
-            const query = { email: email }
-            const result = await productCollection.deleteOne(query)
+            const filter = { email: email }
+            const result = await orderCollection.deleteOne(filter)
             res.send(result)
         })
 
