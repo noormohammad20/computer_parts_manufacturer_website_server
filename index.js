@@ -137,6 +137,11 @@ async function run() {
             res.send(result)
         })
 
+        app.get('/order', verifyJWT, verifyAdmin, async (req, res) => {
+            const orders = await orderCollection.find().toArray()
+            res.send(orders)
+        })
+
         app.get('/admin/:email', async (req, res) => {
             const email = req.params.email
             const user = await userCollection.findOne({ email: email })
@@ -192,6 +197,30 @@ async function run() {
             const result = await profileCollection.insertOne(myProfile)
             res.send(result)
         })
+
+        app.get('/myProfile/', async (req, res) => {
+
+            const result = await profileCollection.find().toArray()
+            res.send(result)
+        })
+
+        app.patch('/myProfile/:email', async (req, res) => {
+            const email = req.params.email
+            const updateProfile = req.body
+            const filter = { email: email }
+            const updatedDoc = {
+                $set: {
+                    education: updateProfile.education,
+                    location: updateProfile.location,
+                    PhoneNumber: updateProfile.phoneNumber,
+                    linkedinProfile: updateProfile.linkedinProfile,
+                }
+            }
+
+            const updatedProfile = await profileCollection.updateOne(filter, updatedDoc)
+            res.send(updatedProfile)
+        })
+
 
     }
     finally {
